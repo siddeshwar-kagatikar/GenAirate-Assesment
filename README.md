@@ -1,4 +1,4 @@
-## Data cleaning and integrity issues
+## 1. Data cleaning and integrity issues
 
 | # | Problem | Evidence | Resolution |
 |---:|---|---|---|
@@ -22,3 +22,89 @@
 | 18 | **Very low damage but high payment** | Nine claims had `buildingDamageAmount = $1` but payments greater than `$10,000`. | Flagged this as a semantic inconsistency but retained the claims because it could reflect claim or payment accounting behavior. |
 | 19 | **Rare categorical values** | Rare flood-zone values such as `AHB`, `AOB`, and `D` were present. | Retained them because there was insufficient evidence that they were invalid. |
 | 20 | **Categorical codes stored as numbers** | `occupancyType`, `elevatedBuildingIndicator`, and `primaryResidenceIndicator` were numeric dtypes but represented categories. | Treated them as categorical features during modeling rather than continuous numerical variables. |
+
+## 2. Frame and build a model
+
+### Task
+
+I chose to predict the **building damage amount** for each NFIP claim using a
+regression model.
+
+### Split
+
+After cleaning the data, I had **1,782 claims with a known building damage
+amount**. I split these into **80% training data (1,425 claims)** and **20%
+test data (357 claims)**.
+
+Since the damage amounts were highly skewed, I divided them into a few damage
+ranges and used those ranges for **stratified sampling**. This helped ensure
+that both the training and test sets contained a similar mix of small, medium,
+and high-value claims. I also used **5-fold cross-validation** to check how
+consistent the model's performance was.
+
+### Result
+
+The simple median baseline had an MAE of about **$51,463**.
+
+My best model was a **Random Forest trained on the log-transformed target**,
+which achieved a test MAE of about **$38,197 across 357 claims**. This is about
+a **25.8% improvement over the baseline**.
+
+Across 5-fold cross-validation, the model achieved an average MAE of about
+**$42,991 ± $7,777**.
+
+### Caveat
+
+The claim amounts are heavily skewed, with a small number of very large claims.
+The log transformation helped the model perform better overall, but it still
+tends to **underestimate very large claims**. Also, the relatively small
+dataset means performance can vary between different train/test splits, which
+is why I included the 5-fold cross-validation result.
+
+## 3. Running portal
+
+A web portal was developed to evaluate raw National Flood Insurance Program
+(NFIP) claims. The application accepts a standardized claim record, predicts
+the final **building damage amount** (building claim payment), and runs data
+integrity checks to flag anomalous values.
+
+### Required inputs
+
+The model requires the following fields:
+
+- `source_system`
+- `yearOfLoss`
+- `state`
+- `countyCode`
+- `latitude`
+- `longitude`
+- `floodEvent`
+- `causeOfDamage`
+- `ratedFloodZone`
+- `occupancyType`
+- `numberOfFloorsInTheInsuredBuilding`
+- `elevatedBuildingIndicator`
+- `primaryResidenceIndicator`
+- `totalBuildingInsuranceCoverage`
+- `totalContentsInsuranceCoverage`
+- `buildingPropertyValue`
+- `buildingReplacementCost`
+- `waterDepth`
+- `floodWaterDuration`
+- `loss_month`
+- `building_age`
+
+### Live portal
+
+The live portal is hosted on Render:
+
+**[Open the NFIP Claims Prediction Portal](https://genairate-assesment.onrender.com/)**
+
+### Tech stack
+
+- **Backend:** FastAPI and Uvicorn (Python)
+- **Machine learning:** Scikit-learn (Random Forest Regressor), Pandas, and Joblib
+- **Frontend:** Plain HTML, CSS, and vanilla JavaScript
+- **Deployment and hosting:** Render, configured as a single-service deployment
+
+The frontend is served natively through FastAPI to avoid cross-origin issues.
