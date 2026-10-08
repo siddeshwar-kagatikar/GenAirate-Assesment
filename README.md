@@ -74,17 +74,16 @@ The model requires the following fields:
 
 | | |
 |---|---|
-| `source_system` | `yearOfLoss` |
-| `state` | `countyCode` |
-| `latitude` | `longitude` |
-| `floodEvent` | `causeOfDamage` |
-| `ratedFloodZone` | `occupancyType` |
-| `numberOfFloorsInTheInsuredBuilding` | `elevatedBuildingIndicator` |
-| `primaryResidenceIndicator` | `totalBuildingInsuranceCoverage` |
-| `totalContentsInsuranceCoverage` | `buildingPropertyValue` |
-| `buildingReplacementCost` | `waterDepth` |
-| `floodWaterDuration` | `loss_month` |
-| `building_age` | |
+| `yearOfLoss` | `state` |
+| `countyCode` | `latitude` |
+| `longitude` | `floodEvent` |
+| `causeOfDamage` | `ratedFloodZone` |
+| `occupancyType` | `numberOfFloorsInTheInsuredBuilding` |
+| `elevatedBuildingIndicator` | `primaryResidenceIndicator` |
+| `totalBuildingInsuranceCoverage` | `totalContentsInsuranceCoverage` |
+| `buildingPropertyValue` | `buildingReplacementCost` |
+| `waterDepth` | `floodWaterDuration` |
+| `loss_month` | `building_age` |
 
 ### Live portal
 
