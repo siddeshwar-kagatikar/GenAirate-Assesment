@@ -1,140 +1,24 @@
-# NFIP Claims: Data Integrity and ML Readiness
+## Data cleaning and integrity issues
 
-Take-home exercise.
-Deadline: Friday 9 October 2026, 10:00 AM ET.
-
-This exercise covers the full path from a raw data file to a working model: clean
-the records, build a simple model, and serve it behind a small portal. The steps
-connect, so choices you make while cleaning affect what you can model later.
-Treat it as one connected task, not separate pieces.
-
-This is deliberately more than you may finish. Do the core tasks first, then take
-the stretch items if you have time. A few things done well beats everything done
-quickly. We care more about your judgement, and how clearly you explain it, than
-about finishing every item.
-
-## Data
-
-`claims.csv` has about two thousand US flood insurance claims from the National
-Flood Insurance Program (NFIP). The records come from more than one source system
-and have not been cleaned. Field names follow the OpenFEMA FIMA NFIP Redacted
-Claims schema (search that name for field definitions).
-
-## Core tasks
-
-### 1. Clean the data
-
-Go through the dataset and find values that look wrong, inconsistent, or
-impossible. Decide what to do about each, and apply the fix. We want to see the
-problems you found and your reasoning, not just a quietly cleaned file.
-
-Write each issue up in a few lines. Use this format:
-
-    Problem:  short description of what is wrong with a field.
-    Evidence: one or two example claim_refs, and roughly how many rows.
-    Fix:      what you did, in one line (or why you chose to leave it).
-
-### 2. Frame and build a model
-
-Pick one predictive task this data can support. For example: predict the building
-claim payment, or flag claims that look anomalous. Prepare the data, train a
-simple baseline, and report the result in plain numbers.
-
-State it plainly. For example:
-
-    Task:   predict building claim payment.
-    Split:  how you split train vs test, and why.
-    Result: test MAE about $X across Y claims.
-    Caveat: what you are unsure about, or what could break this.
-
-A clean, honest baseline is worth more than a complex model you cannot explain.
-
-### 3. Build a running portal
-
-Put the above behind a small web page with a backend. A user gives it an input
-and gets your output back. Running on your own machine is fine.
-
-For example, one interaction:
-
-    In:  a single claim (pasted fields, or an uploaded row).
-    Out: the cleaned version of that claim,
-         the model's prediction (for example, predicted building payment = $X),
-         and any data-quality flags you raised on that row.
-
-Keep it plain. Function matters more than how it looks.
-
-Throughout, commit as you go with clear messages, and open a pull request.
-
-## Stretch (nice to have, if you have time)
-
-- Deploy the portal to a public URL (Vercel, Render, Railway, a container host,
-  or similar) that we can open and use.
-- Add basic safeguards: check the input is valid, and limit how often the portal
-  can be called (rate limiting).
-- Add a system diagram showing the parts and how data moves between them.
-
-## Tech choices and scaling (explain in your writeup)
-
-Use any language, framework, and database you want. Tell us what you picked and
-why, including where you store the claims and the model's inputs and outputs.
-
-Then explain, in words, how your design holds up under load. You do not need to
-run a load test; we want your reasoning. Cover:
-
-- How the portal serves many requests at the same time.
-- What changes as usage grows from 1 to 2, 5, 10, and 100 users at once.
-- Which step is the bottleneck (reading data, or running the model), and why.
-- What you cache, where, and when the cache is cleared.
-- What happens when a free-tier host runs low on compute: does it slow down,
-  queue, reject extra requests, or crash, and what would you want it to do?
-- Where specific data structures or algorithms would speed things up: name the
-  part, the technique, and the gain. For example, an index or hash map for
-  lookups instead of scanning, a heap for a top-N query, batching requests to the
-  model, or vectorised operations instead of row-by-row loops.
-
-For example, the level we are looking for:
-
-    "One API process, one model worker. Reads are cheap; the model runs one
-     request at a time, so it is the bottleneck. At about ten users I cache
-     repeat inputs (hash of the input to result) and queue the rest so they wait
-     instead of timing out. On the free tier I would reply 'busy, try again'
-     past N users rather than crash."
-
-## Deliverables
-
-- A running portal: a public URL if you deployed it, or steps to run it locally.
-- A repository or pull request link with a readable commit history.
-- A short report or a few slides covering: the issues you found and fixed, your
-  model and its numbers, your tech choices, and your scaling and optimisation
-  answers.
-- Steps for us to reproduce your run.
-- Your coding agent session, if you used one (see "Using AI tools").
-- If you did any stretch items: the deployed URL, the diagram, and a note on your
-  safeguards.
-
-## What "done" looks like
-
-Before you send it, check you have:
-
-- [ ] a list of data issues, each with evidence and a fix
-- [ ] a model with a stated task, split, and honest numbers
-- [ ] a portal that takes an input and returns an output
-- [ ] a short report or slides, including your scaling and optimisation answers
-- [ ] steps to run it
-- [ ] your tool disclosure and coding agent session, if you used one
-
-## How we assess
-
-We look at how you reason about messy data, whether your train/test split is
-sound, your git and pull request hygiene, how clearly you explain your choices
-and limits, and your scaling and optimisation reasoning. We also check the portal
-runs and returns sensible output. Read the data closely: some records have
-problems that are not obvious on a first read.
-
-## Using AI tools
-
-You may use AI tools. If you use a coding agent (Claude, ChatGPT, GLM, DeepSeek,
-Gemini, or similar), through a chat or CLI interface or inside any IDE, attach
-your coding agent session for this task, and say which tools you used and how.
-Background on attaching a session:
-https://www.reddit.com/r/ycombinator/comments/1qtgw10/coding_agent_session_thats_such_great_question/
+| # | Problem | Evidence | Resolution |
+|---:|---|---|---|
+| 1 | **Duplicate claims** | 40 `-R` records duplicated corresponding base claims. | Removed the 40 `-R` records, leaving **2,000 unique claims**. |
+| 2 | **Inconsistent `dateOfLoss` format** | `core` used ISO format such as `2024-09-26T00:00:00.000Z`; `legacy_bdx` used `DD-MM-YYYY`. | Parsed each source with its appropriate format and converted both to a common datetime representation. |
+| 3 | **Payment dates before loss** | Six claims had `mostRecentPaymentDate = 1942-10-12` even though their losses occurred years later. | Treated those payment dates as invalid and set them to `NaN`. |
+| 4 | **Construction date after loss** | Ten claims had `originalConstructionDate = 2025-06-01` while their losses occurred before 2025. | Set those construction dates to `NaN`. |
+| 5 | **Invalid latitude values** | Three latitudes were outside the valid geographic range: `-93.5`, `-91.0`, and `-90.5`. | Set only the invalid latitude values to `NaN`. |
+| 6 | **State-coordinate mismatch** | Several coordinates were geographically impossible for their stated state, such as Florida claims with latitude around `-82`. | Set only the inconsistent coordinate, latitude or longitude, to `NaN`; retained the claim. |
+| 7 | **Monetary unit mismatch between sources** | `legacy_bdx` monetary values were approximately **1,000 times smaller** than equivalent `core` values. | Multiplied monetary fields in `legacy_bdx` by `1,000`. |
+| 8 | **Zero property/replacement values** | 167 claims had zero property or replacement values, including claims with substantial damage or payment. | Treated zero `buildingPropertyValue` and `buildingReplacementCost` as missing rather than genuine `$0` values. |
+| 9 | **Negative payment amounts** | One claim had negative building, contents, and net payment values. | Set negative payment values to `NaN`. |
+| 10 | **Inconsistent flood-zone capitalization** | Values such as `ae`, `x`, `a`, and `ah` occurred alongside uppercase versions. | Standardized values with `strip().upper()`. |
+| 11 | **Missing values** | Several fields had substantial missingness, including `floodWaterDuration` at approximately 79% and `floodEvent` at approximately 28%. | Did not delete rows; missing values were handled during ML preprocessing. |
+| 12 | **High-cardinality ZIP code** | `reportedZipCode` had 1,047 unique values, with 752 occurring only once. | Dropped the field from the ML model because one-hot encoding would create sparse, poorly supported features. |
+| 13 | **Strongly skewed monetary variables** | Many monetary variables had very large right tails. | Did not delete outliers; investigated extreme records and retained legitimate high-value claims. |
+| 14 | **Negative water-depth values** | There were 110 negative values, including one `-99`. | Retained them because there was not enough schema or domain evidence to prove they were invalid. |
+| 15 | **Extreme `floodWaterDuration`** | One claim had a duration of `195`, while most non-missing values were `1` or `2`. | Flagged it as suspicious but retained it because it could not be proven invalid. |
+| 16 | **Damage greater than property or replacement value** | Six directly observable cases had building damage exceeding the property or replacement value. | Investigated the cases individually and retained them because the relationship was not sufficiently defined to classify them as data errors. |
+| 17 | **Payment greater than coverage** | 21 claims had payment exceeding building coverage; one had an especially large gross payment. | Investigated the cases but retained them because payment fields appeared to have accounting or gross-payment semantics. |
+| 18 | **Very low damage but high payment** | Nine claims had `buildingDamageAmount = $1` but payments greater than `$10,000`. | Flagged this as a semantic inconsistency but retained the claims because it could reflect claim or payment accounting behavior. |
+| 19 | **Rare categorical values** | Rare flood-zone values such as `AHB`, `AOB`, and `D` were present. | Retained them because there was insufficient evidence that they were invalid. |
+| 20 | **Categorical codes stored as numbers** | `occupancyType`, `elevatedBuildingIndicator`, and `primaryResidenceIndicator` were numeric dtypes but represented categories. | Treated them as categorical features during modeling rather than continuous numerical variables. |
