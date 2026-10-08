@@ -18,7 +18,13 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 2rem;
+            grid-template-areas:
+                "guided results"
+                "json json";
         }
+        .guided-card { grid-area: guided; }
+        .json-card { grid-area: json; }
+        .results-card { grid-area: results; }
         .card {
             background: #fff;
             padding: 1.5rem;
@@ -33,6 +39,54 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             resize: vertical;
+        }
+        .guided-form {
+            display: grid;
+            gap: 0.85rem;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem;
+        }
+        .field {
+            display: grid;
+            gap: 0.3rem;
+        }
+        .field.full-width {
+            grid-column: 1 / -1;
+        }
+        .field label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #34495e;
+        }
+        .field input,
+        .field select {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 0.55rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            color: #333;
+        }
+        .form-help {
+            margin: 0;
+            color: #68737d;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 720px) {
+            body { padding: 1rem; }
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "guided"
+                    "results"
+                    "json";
+            }
+            .form-grid { grid-template-columns: 1fr; }
+            .field.full-width { grid-column: auto; }
         }
         button {
             background-color: #3498db;
@@ -76,8 +130,99 @@
     <p>Submit a raw National Flood Insurance Program claim to predict building payments and check data integrity.</p>
 
     <div class="container">
+        <!-- Guided Input Section -->
+        <div class="card guided-card">
+            <h3>Guided Claim Form</h3>
+            <p class="form-help">Choose values from the observed dataset categories, then submit the claim.</p>
+            <form id="guided-form" class="guided-form">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="yearOfLoss">Year of loss</label>
+                        <input id="yearOfLoss" name="yearOfLoss" type="number" min="1900" max="2030" value="2024" required>
+                    </div>
+                    <div class="field">
+                        <label for="state">State</label>
+                        <select id="state" name="state" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="countyCode">County code</label>
+                        <input id="countyCode" name="countyCode" type="number" min="0" value="12086" required>
+                    </div>
+                    <div class="field">
+                        <label for="floodEvent">Flood event</label>
+                        <select id="floodEvent" name="floodEvent" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="causeOfDamage">Cause of damage</label>
+                        <select id="causeOfDamage" name="causeOfDamage" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="ratedFloodZone">Rated flood zone</label>
+                        <select id="ratedFloodZone" name="ratedFloodZone" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="occupancyType">Occupancy type</label>
+                        <select id="occupancyType" name="occupancyType" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="numberOfFloorsInTheInsuredBuilding">Number of floors</label>
+                        <input id="numberOfFloorsInTheInsuredBuilding" name="numberOfFloorsInTheInsuredBuilding" type="number" min="1" value="1" required>
+                    </div>
+                    <div class="field">
+                        <label for="elevatedBuildingIndicator">Elevated building</label>
+                        <select id="elevatedBuildingIndicator" name="elevatedBuildingIndicator" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="primaryResidenceIndicator">Primary residence</label>
+                        <select id="primaryResidenceIndicator" name="primaryResidenceIndicator" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="totalBuildingInsuranceCoverage">Building insurance coverage</label>
+                        <input id="totalBuildingInsuranceCoverage" name="totalBuildingInsuranceCoverage" type="number" min="0" value="250000" required>
+                    </div>
+                    <div class="field">
+                        <label for="totalContentsInsuranceCoverage">Contents insurance coverage</label>
+                        <input id="totalContentsInsuranceCoverage" name="totalContentsInsuranceCoverage" type="number" min="0" value="40000" required>
+                    </div>
+                    <div class="field">
+                        <label for="latitude">Latitude</label>
+                        <input id="latitude" name="latitude" type="number" step="any" value="27.95">
+                    </div>
+                    <div class="field">
+                        <label for="longitude">Longitude</label>
+                        <input id="longitude" name="longitude" type="number" step="any" value="-82.46">
+                    </div>
+                    <div class="field">
+                        <label for="buildingPropertyValue">Building property value</label>
+                        <input id="buildingPropertyValue" name="buildingPropertyValue" type="number" min="0" value="300000">
+                    </div>
+                    <div class="field">
+                        <label for="buildingReplacementCost">Building replacement cost</label>
+                        <input id="buildingReplacementCost" name="buildingReplacementCost" type="number" min="0" value="350000">
+                    </div>
+                    <div class="field">
+                        <label for="waterDepth">Water depth</label>
+                        <input id="waterDepth" name="waterDepth" type="number" step="any" value="5">
+                    </div>
+                    <div class="field">
+                        <label for="floodWaterDuration">Flood water duration</label>
+                        <input id="floodWaterDuration" name="floodWaterDuration" type="number" step="any" value="1">
+                    </div>
+                    <div class="field">
+                        <label for="loss_month">Loss month</label>
+                        <input id="loss_month" name="loss_month" type="number" min="1" max="12" value="9" required>
+                    </div>
+                    <div class="field">
+                        <label for="building_age">Building age</label>
+                        <input id="building_age" name="building_age" type="number" min="0" value="35">
+                    </div>
+                </div>
+                <button type="submit">Predict Payment</button>
+            </form>
+        </div>
+
         <!-- Input Section -->
-        <div class="card">
+        <div class="card json-card">
             <h3>Input Claim Data (JSON)</h3>
             <textarea id="json-input" placeholder='Paste your claim JSON here...'></textarea>
             <br>
@@ -87,7 +232,7 @@
         </div>
 
         <!-- Output Section -->
-        <div class="card" id="output-card" style="display: none;">
+        <div class="card results-card" id="output-card" style="display: none;">
             <h3>Results</h3>
             
             <div class="result-section">
@@ -110,6 +255,109 @@
 
     <script>
         const API_URL = "http://127.0.0.1:8000/predict";
+
+        const stateOptions = [
+            "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID",
+            "IL", "IN", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "NC",
+            "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "PR",
+            "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV"
+        ];
+        const floodEventOptions = [
+            "2021 Mid-Spring Severe Storms", "2025 July Central TX Flooding",
+            "2025 July NYC Metro Area Flooding", "2025 July TS Chantal",
+            "2025-08-Erin-HU", "2025-08-MilwaukeeMetro-Flood", "2025-12-AtmosphericRiver",
+            "2026-03-KonaStorm", "2026-04-Flooding", "2026-06-Arthur-TS",
+            "2026-07-Texas-Flooding", "2026-07-West Virginia-Flooding",
+            "2026-08-Indiana-Flooding", "April Florida Flooding",
+            "California Atmospheric River", "Central U.S. April Flooding", "December Nor'easter",
+            "Fall 2018 Texas Flooding", "February Kentucky Flooding",
+            "February West Virginia Flooding", "Hurricane Beryl", "Hurricane Debby",
+            "Hurricane Delta", "Hurricane Eta", "Hurricane Fiona", "Hurricane Florence",
+            "Hurricane Francine", "Hurricane Hanna", "Hurricane Helene", "Hurricane Ian",
+            "Hurricane Ida", "Hurricane Idalia", "Hurricane Isaias", "Hurricane Laura",
+            "Hurricane Michael", "Hurricane Milton", "Hurricane Nicole", "Hurricane Sally",
+            "Hurricane Zeta", "June Midwest Flooding", "June South Florida Flooding",
+            "June TS Alberto", "Late July Flooding", "Late-September New York Flooding",
+            "March 2019 Midwest Flooding", "San Diego Flooding", "Tennessee Flooding",
+            "Texas Severe Winter Storms", "Texas Spring Flooding", "Tropical Cyclone Eight",
+            "Tropical Storm Barry", "Tropical Storm Beta", "Tropical Storm Claudette",
+            "Tropical Storm Fred", "Tropical Storm Henri", "Tropical Storm Hilary",
+            "Tropical Storm Imelda", "Tropical Storm Nicholas", "Tropical Storm Ophelia",
+            "Vermont/New York Flooding", "Yellowstone Flooding"
+        ].sort((a, b) => a.localeCompare(b));
+        const causeOfDamageOptions = ["0", "1", "2", "3", "4", "D"];
+        const ratedFloodZoneOptions = [
+            "A", "A01", "A02", "A03", "A04", "A05", "A07", "A08", "A09", "A10",
+            "A11", "A12", "A13", "A15", "A18", "A99", "AE", "AH", "AHB", "AO",
+            "AOB", "B", "C", "D", "V16", "VE", "X"
+        ];
+        const occupancyTypeOptions = ["1", "2", "3", "4", "6", "11", "12", "13", "14", "15", "16", "18"];
+
+        function populateSelect(id, options, labels = {}) {
+            const select = document.getElementById(id);
+            select.replaceChildren();
+            options.forEach(option => {
+                const item = document.createElement('option');
+                item.value = option;
+                item.textContent = labels[option] || option;
+                select.appendChild(item);
+            });
+        }
+
+        function initialiseGuidedForm() {
+            populateSelect('state', stateOptions);
+            populateSelect('floodEvent', ['Missing', ...floodEventOptions], { Missing: 'No specific flood event / Unknown' });
+            populateSelect('causeOfDamage', ['Missing', ...causeOfDamageOptions], { Missing: 'Missing / Unknown' });
+            populateSelect('ratedFloodZone', ['Missing', ...ratedFloodZoneOptions], { Missing: 'Missing / Unknown' });
+            populateSelect('occupancyType', occupancyTypeOptions);
+            populateSelect('elevatedBuildingIndicator', ['0', '1'], { '0': 'No (0)', '1': 'Yes (1)' });
+            populateSelect('primaryResidenceIndicator', ['0', '1'], { '0': 'No (0)', '1': 'Yes (1)' });
+            document.getElementById('state').value = 'FL';
+            document.getElementById('causeOfDamage').value = '4';
+            document.getElementById('ratedFloodZone').value = 'AE';
+            document.getElementById('occupancyType').value = '11';
+            document.getElementById('elevatedBuildingIndicator').value = '0';
+            document.getElementById('primaryResidenceIndicator').value = '1';
+        }
+
+        function formValue(formData, name, numeric = true) {
+            const value = formData.get(name);
+            return numeric && value !== '' ? Number(value) : (value === '' ? null : value);
+        }
+
+        function guidedFormToPayload() {
+            const formData = new FormData(document.getElementById('guided-form'));
+            return {
+                yearOfLoss: formValue(formData, 'yearOfLoss'),
+                state: formValue(formData, 'state', false),
+                countyCode: formValue(formData, 'countyCode'),
+                latitude: formValue(formData, 'latitude'),
+                longitude: formValue(formData, 'longitude'),
+                floodEvent: formData.get('floodEvent') === 'Missing' ? 'Missing' : formData.get('floodEvent'),
+                causeOfDamage: formData.get('causeOfDamage') === 'Missing' ? 'Missing' : formData.get('causeOfDamage'),
+                ratedFloodZone: formData.get('ratedFloodZone') === 'Missing' ? 'Missing' : formData.get('ratedFloodZone'),
+                occupancyType: formValue(formData, 'occupancyType'),
+                numberOfFloorsInTheInsuredBuilding: formValue(formData, 'numberOfFloorsInTheInsuredBuilding'),
+                elevatedBuildingIndicator: formValue(formData, 'elevatedBuildingIndicator'),
+                primaryResidenceIndicator: formValue(formData, 'primaryResidenceIndicator'),
+                totalBuildingInsuranceCoverage: formValue(formData, 'totalBuildingInsuranceCoverage'),
+                totalContentsInsuranceCoverage: formValue(formData, 'totalContentsInsuranceCoverage'),
+                buildingPropertyValue: formValue(formData, 'buildingPropertyValue'),
+                buildingReplacementCost: formValue(formData, 'buildingReplacementCost'),
+                waterDepth: formValue(formData, 'waterDepth'),
+                floodWaterDuration: formValue(formData, 'floodWaterDuration'),
+                loss_month: formValue(formData, 'loss_month'),
+                building_age: formValue(formData, 'building_age')
+            };
+        }
+
+        document.getElementById('guided-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            document.getElementById('json-input').value = JSON.stringify(guidedFormToPayload(), null, 2);
+            submitClaim();
+        });
+
+        initialiseGuidedForm();
 
         const sampleData = {
             "source_system": "core",
