@@ -1,5 +1,4 @@
 import os
-import pickle
 import hashlib
 import joblib
 from typing import Dict, Any, List, Optional
@@ -7,6 +6,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from fastapi.responses import FileResponse
 
 app = FastAPI(
     title="NFIP Claims Prediction & Data Integrity API",
@@ -44,6 +44,15 @@ def load_artifacts():
         model = joblib.load(MODEL_PATH)
     except Exception as e:
         raise RuntimeError(f"Failed to load model artifacts from {MODELS_DIR}: {e}")
+
+
+# (Put this near the bottom of main.py, below your /predict route)
+@app.get("/")
+def serve_frontend():
+    # Resolve the path to index.html relative to main.py
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    frontend_path = os.path.join(base_dir, "..", "Frontend", "index.html")
+    return FileResponse(frontend_path)
 
 
 # --- Schema Definitions ---

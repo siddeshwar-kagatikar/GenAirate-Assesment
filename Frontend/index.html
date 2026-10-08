@@ -18,6 +18,7 @@
         .page-header {
             margin-bottom: 2rem;
             max-width: 760px;
+            animation: fade-slide-in 0.55s ease both;
         }
         .eyebrow {
             color: #0f766e;
@@ -57,6 +58,20 @@
             border-radius: 14px;
             box-shadow: 0 10px 30px rgba(16, 42, 67, 0.08);
             padding: 1.5rem;
+            animation: fade-slide-in 0.55s ease both;
+        }
+        .guided-card { animation-delay: 0.08s; }
+        .results-card { animation-delay: 0.16s; }
+        .json-card { animation-delay: 0.24s; }
+        @keyframes fade-slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .card h3 {
             color: #102a43;
@@ -192,6 +207,20 @@
             border: 1px solid #b7ead8;
             border-radius: 10px;
             text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .metric:not(:empty) {
+            animation: result-pop 0.4s ease both;
+        }
+        @keyframes result-pop {
+            from {
+                opacity: 0.35;
+                transform: scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
         .flags-list {
             color: #c0392b;
@@ -212,6 +241,16 @@
             color: #c0392b;
             font-weight: 600;
             margin-top: 1rem;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
@@ -348,7 +387,7 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:8000/predict";
+        const API_URL = "/predict";
 
         const stateOptions = [
             "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID",
