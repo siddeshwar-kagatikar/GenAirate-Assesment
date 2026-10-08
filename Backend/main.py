@@ -3,15 +3,22 @@ import hashlib
 import joblib
 from typing import Dict, Any, List, Optional
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from fastapi.responses import FileResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="NFIP Claims Prediction & Data Integrity API",
     version="1.0.0"
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS for local and deployed frontend interactions
 app.add_middleware(
@@ -126,7 +133,8 @@ def evaluate_and_clean_claim(raw: Dict[str, Any]):
 
 # --- Inference Endpoint ---
 @app.post("/predict", response_model=ClaimResponse)
-def predict_claim(claim: ClaimInput):
+@limiter.limit("30/minute")
+def predict_claim(request: Request, claim: ClaimInput):
     if preprocessor is None or model is None:
         raise HTTPException(status_code=503, detail="Model is still loading or unavailable.")
 

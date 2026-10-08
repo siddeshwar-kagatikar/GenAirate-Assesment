@@ -99,3 +99,13 @@ The live portal is hosted on Render:
 - **Deployment and hosting:** Render, configured as a single-service deployment
 
 The frontend is served natively through FastAPI to avoid cross-origin issues.
+
+### Safeguards
+
+- **Rate limiting:** SlowAPI limits the `POST /predict` endpoint to **30
+  requests per minute per client IP address**. Requests above this limit
+  receive HTTP `429 Too Many Requests`.
+- **Prediction caching:** Identical cleaned claim inputs are cached in memory
+  using a SHA-256 hash. The cache stores up to **5,000 entries** and evicts the
+  oldest inserted entry when it reaches capacity. Cached values are lost when
+  the application restarts.
