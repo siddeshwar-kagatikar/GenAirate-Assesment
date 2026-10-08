@@ -109,3 +109,102 @@ The frontend is served natively through FastAPI to avoid cross-origin issues.
   using a SHA-256 hash. The cache stores up to **5,000 entries** and evicts the
   oldest inserted entry when it reaches capacity. Cached values are lost when
   the application restarts.
+
+## 4. System design
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0b0f19',
+    'mainBkg': '#1e293b',
+    'textColor': '#f8fafc',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#f8fafc',
+    'primaryBorderColor': '#38bdf8',
+    'lineColor': '#64748b',
+    'secondaryColor': '#111827',
+    'tertiaryColor': '#0f172a',
+    'clusterBkg': '#0f172a',
+    'clusterBorder': '#334155',
+    'defaultLinkColor': '#38bdf8',
+    'fontFamily': 'Inter, system-ui, sans-serif'
+  }
+}}%%
+flowchart TD
+    subgraph Client ["Client Layer"]
+        UI["Web Browser / Client<br/><code>Frontend UI or cURL</code>"]
+    end
+
+    subgraph Edge ["Gateway & Traffic Control"]
+        Uvicorn["Uvicorn ASGI Server<br/><code>Port 8000 / $PORT</code>"]
+        Limiter["SlowAPI Rate Limiter<br/><code>30 req/min per IP</code>"]
+    end
+
+    subgraph API ["FastAPI Engine"]
+        Router{"Route Matcher"}
+        Static["FileResponse<br/><code>index.html</code>"]
+        HealthCache["Diagnostics<br/><code>/health & /cache</code>"]
+        Pydantic["Pydantic Validator<br/><code>ClaimInput</code>"]
+        Sanitizer["Data Quality Engine<br/><code>evaluate_and_clean_claim()</code>"]
+        CacheCheck{"SHA-256 Hash<br/>in Cache?"}
+        CacheStore["Update Cache<br/><code>FIFO Eviction @ 5000</code>"]
+    end
+
+    subgraph Memory ["In-Memory State (RAM)"]
+        CacheMem[("PREDICTION_CACHE<br/><code>Python dict</code>")]
+        Artifacts[("Loaded Artifacts<br/><code>Preprocessor & RF Model</code>")]
+    end
+
+    subgraph ML ["ML Inference Pipeline"]
+        DF["Pandas DataFrame<br/><code>Vectorized 1-row matrix</code>"]
+        Prep["Preprocessor Transform<br/><code>nfip_preprocessor.pkl</code>"]
+        RF["Random Forest Predict<br/><code>nfip_rf_model.pkl</code>"]
+    end
+
+    UI -->|"HTTP GET /"| Uvicorn
+    UI -->|"HTTP POST /predict"| Uvicorn
+    UI -->|"HTTP GET /health, /cache"| Uvicorn
+
+    Uvicorn --> Limiter
+    Limiter -->|"Allowed"| Router
+    Limiter -.->|"Rate Exceeded (429)"| UI
+
+    Router -->|"GET /"| Static --> UI
+    Router -->|"GET /health, /cache"| HealthCache --> UI
+    Router -->|"POST /predict"| Pydantic
+
+    Pydantic -->|"Valid Schema"| Sanitizer
+    Pydantic -.->|"Malformed Payload (422)"| UI
+    Sanitizer -->|"Clean Record + Flags"| CacheCheck
+
+    CacheCheck -->|"Cache Hit"| CacheMem
+    CacheMem -->|"Instant Response"| UI
+    CacheCheck -->|"Cache Miss"| DF
+
+    DF --> Prep
+    Artifacts -.->|"Pre-warmed in RAM"| Prep
+    Prep -->|"Feature Matrix"| RF
+    Artifacts -.->|"Pre-warmed in RAM"| RF
+    RF -->|"Payment Float"| CacheStore
+
+    CacheStore -->|"Write"| CacheMem
+    CacheStore -->|"Response Payload"| UI
+
+    style UI fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    style Uvicorn fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc
+    style Limiter fill:#1e293b,stroke:#f59e0b,stroke-width:1px,color:#f8fafc
+    style Router fill:#1e293b,stroke:#a855f7,stroke-width:1px,color:#f8fafc
+    style Pydantic fill:#1e293b,stroke:#38bdf8,stroke-width:1px,color:#f8fafc
+    style Sanitizer fill:#1e293b,stroke:#38bdf8,stroke-width:1px,color:#f8fafc
+    style CacheCheck fill:#1e293b,stroke:#a855f7,stroke-width:1px,color:#f8fafc
+    style CacheMem fill:#0f2b38,stroke:#06b6d4,stroke-width:2px,color:#e0f2fe
+    style Artifacts fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#ede9fe
+    style DF fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc
+    style Prep fill:#1e293b,stroke:#10b981,stroke-width:1px,color:#f8fafc
+    style RF fill:#1e293b,stroke:#10b981,stroke-width:2px,color:#f8fafc
+    style CacheStore fill:#1e293b,stroke:#06b6d4,stroke-width:1px,color:#f8fafc
+    style Static fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc
+    style HealthCache fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc
+```
