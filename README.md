@@ -72,27 +72,19 @@ integrity checks to flag anomalous values.
 
 The model requires the following fields:
 
-- `source_system`
-- `yearOfLoss`
-- `state`
-- `countyCode`
-- `latitude`
-- `longitude`
-- `floodEvent`
-- `causeOfDamage`
-- `ratedFloodZone`
-- `occupancyType`
-- `numberOfFloorsInTheInsuredBuilding`
-- `elevatedBuildingIndicator`
-- `primaryResidenceIndicator`
-- `totalBuildingInsuranceCoverage`
-- `totalContentsInsuranceCoverage`
-- `buildingPropertyValue`
-- `buildingReplacementCost`
-- `waterDepth`
-- `floodWaterDuration`
-- `loss_month`
-- `building_age`
+| | |
+|---|---|
+| `source_system` | `yearOfLoss` |
+| `state` | `countyCode` |
+| `latitude` | `longitude` |
+| `floodEvent` | `causeOfDamage` |
+| `ratedFloodZone` | `occupancyType` |
+| `numberOfFloorsInTheInsuredBuilding` | `elevatedBuildingIndicator` |
+| `primaryResidenceIndicator` | `totalBuildingInsuranceCoverage` |
+| `totalContentsInsuranceCoverage` | `buildingPropertyValue` |
+| `buildingReplacementCost` | `waterDepth` |
+| `floodWaterDuration` | `loss_month` |
+| `building_age` | |
 
 ### Live portal
 
