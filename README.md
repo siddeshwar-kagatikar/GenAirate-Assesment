@@ -110,7 +110,58 @@ The frontend is served natively through FastAPI to avoid cross-origin issues.
   oldest inserted entry when it reaches capacity. Cached values are lost when
   the application restarts.
 
-## 4. System design
+## 4. Steps to run the website locally
+
+### Prerequisites
+
+- Python 3.10 or newer
+- Git
+- The model files in the `Models` folder:
+  - `nfip_preprocessor.pkl`
+  - `nfip_rf_model.pkl`
+
+### Setup and start the backend
+
+From the repository root, run the following commands in PowerShell:
+
+```powershell
+git clone <repository-url>
+cd nfip-assessment
+
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+uvicorn Backend.main:app --host 127.0.0.1 --port 8000
+```
+
+If PowerShell blocks virtual-environment activation, run this once in the
+current PowerShell session and then activate the environment again:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.venv\Scripts\Activate.ps1
+```
+
+### Open the website
+
+With the backend running, open the following URL in a browser:
+
+**[http://127.0.0.1:8000/](http://127.0.0.1:8000/)**
+
+The root URL opens the project landing page. Select **Open prediction portal**
+or open **[http://127.0.0.1:8000/portal](http://127.0.0.1:8000/portal)** to use
+the claim form. Select **How it works** or open
+**[http://127.0.0.1:8000/readme](http://127.0.0.1:8000/readme)** to view the
+project documentation. The FastAPI application serves all frontend pages, so
+no separate frontend server is required. The API documentation is available at
+**[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**.
+
+To stop the local server, press `Ctrl+C` in the terminal.
+
+## 5. System design
 
 ```mermaid
 %%{init: {

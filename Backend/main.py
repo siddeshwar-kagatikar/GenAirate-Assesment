@@ -56,10 +56,23 @@ def load_artifacts():
 # (Put this near the bottom of main.py, below your /predict route)
 @app.get("/")
 def serve_frontend():
-    # Resolve the path to index.html relative to main.py
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    frontend_path = os.path.join(base_dir, "..", "Frontend", "landing.html")
+    return FileResponse(frontend_path)
+
+
+@app.get("/portal")
+def serve_portal():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     frontend_path = os.path.join(base_dir, "..", "Frontend", "index.html")
     return FileResponse(frontend_path)
+
+
+@app.get("/readme")
+def serve_readme():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    readme_path = os.path.join(base_dir, "..", "README.md")
+    return FileResponse(readme_path, media_type="text/markdown")
 
 
 # --- Schema Definitions ---
@@ -114,8 +127,8 @@ def evaluate_and_clean_claim(raw: Dict[str, Any]):
 
     # 3. Negative water depth anomaly
     water_depth = cleaned.get("waterDepth")
-    if water_depth is not None and water_depth < 0:
-        flags.append(f"FLAG_NEGATIVE_DEPTH: waterDepth ({water_depth}) is negative; possible basement or sensor artifact.")
+    # if water_depth is not None and water_depth < 0:
+    #     flags.append(f"FLAG_NEGATIVE_DEPTH: waterDepth ({water_depth}) is negative; possible basement or sensor artifact.")
 
     # 4. Coverage vs Property sanity check
     coverage = cleaned.get("totalBuildingInsuranceCoverage", 0.0)
