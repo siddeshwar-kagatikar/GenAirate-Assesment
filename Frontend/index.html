@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFIP Claims Prediction Portal</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        h1 { color: #2c3e50; }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            margin-right: 0.5rem;
+        }
+        button:hover { background-color: #2980b9; }
+        button.secondary { background-color: #7f8c8d; }
+        button.secondary:hover { background-color: #636e72; }
+        
+        .result-section { margin-top: 1.5rem; }
+        .metric {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #27ae60;
+            padding: 1rem;
+            background: #eafaf1;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .flags-list { color: #c0392b; font-weight: bold; }
+        pre {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+        #error-msg { color: #e74c3c; font-weight: bold; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+
+    <h1>NFIP Claims Prediction Portal</h1>
+    <p>Submit a raw National Flood Insurance Program claim to predict building payments and check data integrity.</p>
+
+    <div class="container">
+        <!-- Input Section -->
+        <div class="card">
+            <h3>Input Claim Data (JSON)</h3>
+            <textarea id="json-input" placeholder='Paste your claim JSON here...'></textarea>
+            <br>
+            <button class="secondary" onclick="loadSampleData()">Load Sample</button>
+            <button onclick="submitClaim()">Predict Payment</button>
+            <div id="error-msg"></div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="card" id="output-card" style="display: none;">
+            <h3>Results</h3>
+            
+            <div class="result-section">
+                <strong>Predicted Building Payment:</strong>
+                <div class="metric" id="prediction-output">$0.00</div>
+                <small style="color: gray; display: block; text-align: center; margin-top: 5px;" id="cache-status"></small>
+            </div>
+
+            <div class="result-section">
+                <strong>Data Quality Flags:</strong>
+                <ul class="flags-list" id="flags-output"></ul>
+            </div>
+
+            <div class="result-section">
+                <strong>Cleaned Claim Record:</strong>
+                <pre id="cleaned-data-output"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/predict";
+
+        const sampleData = {
+            "source_system": "core",
+            "yearOfLoss": 2024,
+            "state": "FL",
+            "countyCode": 12086,
+            "latitude": 27.95,
+            "longitude": -82.46,
+            "floodEvent": "Hurricane Helene",
+            "causeOfDamage": "4",
+            "ratedFloodZone": "AE",
+            "occupancyType": 11,
+            "numberOfFloorsInTheInsuredBuilding": 1,
+            "elevatedBuildingIndicator": 0,
+            "primaryResidenceIndicator": 1,
+            "totalBuildingInsuranceCoverage": 250000,
+            "totalContentsInsuranceCoverage": 40000,
+            "buildingPropertyValue": 300000,
+            "buildingReplacementCost": 350000,
+            "waterDepth": 5,
+            "floodWaterDuration": 1,
+            "loss_month": 9,
+            "building_age": 35
+        };
+
+        function loadSampleData() {
+            document.getElementById('json-input').value = JSON.stringify(sampleData, null, 2);
+            document.getElementById('error-msg').innerText = '';
+        }
+
+        async function submitClaim() {
+            const inputField = document.getElementById('json-input').value;
+            const errorMsg = document.getElementById('error-msg');
+            const outputCard = document.getElementById('output-card');
+            
+            errorMsg.innerText = '';
+            
+            let payload;
+            try {
+                payload = JSON.parse(inputField);
+            } catch (e) {
+                errorMsg.innerText = "Invalid JSON format. Please check your input.";
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(JSON.stringify(errData.detail || "Server Error"));
+                }
+
+                const data = await response.json();
+                
+                // Show Output Card
+                outputCard.style.display = 'block';
+
+                // Populate Prediction
+                const payment = data.predicted_building_payment;
+                document.getElementById('prediction-output').innerText = `$${payment.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                
+                // Populate Cache Status
+                document.getElementById('cache-status').innerText = data.cached ? "⚡ Served from Cache" : "⏱️ Calculated fresh";
+
+                // Populate Flags
+                const flagsList = document.getElementById('flags-output');
+                flagsList.innerHTML = '';
+                if (data.data_quality_flags.length === 0) {
+                    flagsList.innerHTML = '<li style="color: #27ae60;">No anomalies detected.</li>';
+                } else {
+                    data.data_quality_flags.forEach(flag => {
+                        const li = document.createElement('li');
+                        li.innerText = flag;
+                        flagsList.appendChild(li);
+                    });
+                }
+
+                // Populate Cleaned Data
+                document.getElementById('cleaned-data-output').innerText = JSON.stringify(data.cleaned_input, null, 2);
+
+            } catch (error) {
+                errorMsg.innerText = `Request Failed: ${error.message}. Is the backend running?`;
+            }
+        }
+    </script>
+</body>
+</html>
