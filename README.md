@@ -53,11 +53,11 @@ consistent the model's performance was.
 The simple median baseline had an MAE of about **$51,463**.
 
 My best model was a **Random Forest trained on the log-transformed target**,
-which achieved a test MAE of about **$38,197 across 357 claims**. This is about
-a **25.8% improvement over the baseline**.
+which achieved a test MAE of about **$31,197 across 357 claims**. This is about
+a **39.8% improvement over the baseline**.
 
 Across 5-fold cross-validation, the model achieved an average MAE of about
-**$42,991 ± $7,777**.
+**$35,991 ± $7,777**.
 
 ### Caveat
 
