@@ -30,6 +30,12 @@
 I chose to predict the **building damage amount** for each NFIP claim using a
 regression model.
 
+My primary objective was not to maximize predictive
+accuracy or minimize the error as much as possible. Instead, I focused on
+developing a sound model and completing a reliable end-to-end machine learning
+pipeline, from data cleaning and preprocessing through model training,
+evaluation, and deployment.
+
 ### Split
 
 After cleaning the data, I had **1,782 claims with a known building damage
@@ -110,7 +116,68 @@ The frontend is served natively through FastAPI to avoid cross-origin issues.
   oldest inserted entry when it reaches capacity. Cached values are lost when
   the application restarts.
 
-## 4. Steps to run the website locally
+## 4. Architecture and scaling
+
+### Technology choices and storage
+
+The backend uses Python and FastAPI, with Scikit-learn for the machine
+learning model. FastAPI is a natural fit because it handles concurrent web
+requests and integrates well with Python machine learning libraries.
+
+The preprocessor and Random Forest model are loaded into memory when the
+server starts. Claim inputs are received as ephemeral JSON payloads, and
+recent inputs and outputs are temporarily stored in a lightweight in-memory
+cache. No external database is required for the current application.
+
+### Serving concurrent requests
+
+FastAPI runs on Uvicorn that uses an asynchronous event loop.
+Synchronous prediction work is delegated to worker threads so the event loop
+can continue accepting requests. This keeps request handling responsive while
+the Scikit-learn model processes each claim.
+
+### Scaling from 1 to 100 users
+
+- **1 to 5 users:** Requests are handled by available worker threads and
+  typically complete in milliseconds.
+- **10 users:** The server handles more concurrent work and may experience
+  modest increases in response time from thread scheduling.
+- **100 users:** A single free-tier instance is likely to reach its CPU
+  capacity. Requests may queue and response times will increase. Supporting
+  this level of simultaneous traffic reliably would require multiple server
+  instances behind a load balancer.
+
+### Primary bottleneck
+
+Model inference is the primary bottleneck. Reading and validating a 20-field
+JSON payload requires minimal work, while preprocessing the data and
+traversing hundreds of decision trees in the Random Forest is
+compute-intensive.
+
+### Caching strategy
+
+The in-memory cache uses a standard Python dictionary. It hashes the cleaned
+input data with SHA-256 and maps each hash to the prediction and integrity
+flags. A repeated claim can therefore bypass model inference. The cache is
+capped at **5,000 entries**; when it reaches capacity, the oldest entry is
+evicted using FIFO behavior. Because it is stored in RAM, the cache is cleared
+when the server restarts.
+
+### Handling free-tier limits
+
+Free-tier hosting can throttle CPU-intensive workloads, causing requests to
+queue or time out. Memory exhaustion can also cause the operating system to
+terminate the application. The SlowAPI rate limiter helps protect the service
+by limiting each client IP address to **30 requests per minute** and returning
+HTTP `429 Too Many Requests` for excess traffic.
+
+### Algorithmic optimizations
+
+- **Hash map lookups:** Python dictionary lookups provide average-case
+  **O(1)** cache access, allowing repeated claims to avoid the more expensive
+  preprocessing and model inference steps.
+
+## 5. Steps to run the website locally
 
 ### Prerequisites
 
@@ -161,7 +228,7 @@ no separate frontend server is required. The API documentation is available at
 
 To stop the local server, press `Ctrl+C` in the terminal.
 
-## 5. System design
+## 6. System design
 
 ```mermaid
 %%{init: {
@@ -259,3 +326,26 @@ flowchart TD
     style Static fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc
     style HealthCache fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc
 ```
+
+## 7. AI tools
+
+I used AI tools as development assistants throughout this assignment. I
+reviewed, adapted, and validated the generated output rather than relying on
+it without checking.
+
+- **ChatGPT:** I used ChatGPT to support data cleaning and model training. It
+  was mainly used for code generation and for discussing implementation
+  choices and data-cleaning judgments.
+- **Gemini:** I used Gemini to generate the frontend and backend code based on
+  the implementation method and plan that I provided.
+- **README:** I used a chat interface to help draft and organize this
+  documentation.
+
+For both tools, I primarily used the web interfaces because these tasks did
+not require extensive code execution through a chat or command-line
+interface.
+
+### Session links
+
+- [ChatGPT session](https://chatgpt.com/share/6ac87c31-98fc-83ee-9785-486e713a55a9)
+- [Gemini session](https://share.gemini.google/TEUMTaodJ8kw)
