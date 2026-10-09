@@ -1,12 +1,13 @@
 import os
 import hashlib
 import joblib
+import markdown
 from typing import Dict, Any, List, Optional
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -72,7 +73,137 @@ def serve_portal():
 def serve_readme():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     readme_path = os.path.join(base_dir, "..", "README.md")
-    return FileResponse(readme_path, media_type="text/markdown")
+    with open(readme_path, "r", encoding="utf-8") as readme_file:
+        readme_content = readme_file.read()
+
+    rendered_readme = markdown.markdown(
+        readme_content,
+        extensions=["extra", "fenced_code", "tables", "toc"],
+    )
+    return HTMLResponse(
+        content=f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFIP Claims Prediction | Project Documentation</title>
+    <style>
+        :root {{
+            color-scheme: light;
+            --navy: #102a43;
+            --muted: #627d98;
+            --teal: #0f766e;
+            --line: #d9e2ec;
+            --code-bg: #f1f5f9;
+        }}
+        * {{ box-sizing: border-box; }}
+        body {{
+            margin: 0;
+            padding: 2rem 1.25rem 4rem;
+            color: var(--navy);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                Helvetica, Arial, sans-serif;
+            background:
+                radial-gradient(circle at 90% 0%, rgba(15, 118, 110, 0.1),
+                    transparent 28rem),
+                #f4f7fb;
+        }}
+        .document {{
+            width: min(1100px, 100%);
+            margin: 0 auto;
+            padding: clamp(1.5rem, 4vw, 3.5rem);
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: 0 18px 50px rgba(16, 42, 67, 0.1);
+        }}
+        h1, h2, h3, h4 {{
+            color: var(--navy);
+            line-height: 1.2;
+        }}
+        h1 {{
+            padding-bottom: 1rem;
+            border-bottom: 3px solid var(--teal);
+        }}
+        h2 {{
+            margin-top: 2.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--line);
+        }}
+        h3 {{ margin-top: 2rem; }}
+        p, li {{ color: #334e68; line-height: 1.7; }}
+        a {{ color: #1d4ed8; }}
+        table {{
+            width: 100%;
+            margin: 1.25rem 0;
+            border-collapse: collapse;
+            display: block;
+            overflow-x: auto;
+        }}
+        th, td {{
+            min-width: 9rem;
+            padding: 0.75rem;
+            border: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }}
+        th {{ color: #fff; background: var(--teal); }}
+        tr:nth-child(even) {{ background: #f8fafc; }}
+        code {{
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+            color: #155e75;
+            background: var(--code-bg);
+        }}
+        pre {{
+            padding: 1rem;
+            overflow-x: auto;
+            border-radius: 8px;
+            color: #e2e8f0;
+            background: #0f172a;
+            line-height: 1.5;
+        }}
+        pre code {{ padding: 0; color: inherit; background: transparent; }}
+        blockquote {{
+            margin-left: 0;
+            padding: 0.5rem 1rem;
+            border-left: 4px solid var(--teal);
+            color: var(--muted);
+            background: #f8fafc;
+        }}
+        .mermaid {{
+            margin: 1.5rem 0;
+            padding: 1rem;
+            overflow-x: auto;
+            text-align: center;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f8fafc;
+        }}
+        @media (max-width: 640px) {{
+            body {{ padding: 0.75rem; }}
+            .document {{ padding: 1.25rem; border-radius: 12px; }}
+        }}
+    </style>
+</head>
+<body>
+    <main class="document">
+        {rendered_readme}
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        document.querySelectorAll("pre code.language-mermaid").forEach((code) => {{
+            const diagram = document.createElement("div");
+            diagram.className = "mermaid";
+            diagram.textContent = code.textContent;
+            code.parentElement.replaceWith(diagram);
+        }});
+        mermaid.initialize({{ startOnLoad: false, securityLevel: "strict" }});
+        mermaid.run();
+    </script>
+</body>
+</html>"""
+    )
 
 
 # --- Schema Definitions ---
